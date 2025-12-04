@@ -1,0 +1,39 @@
+---
+- name: Create EC2 instance with Security Group
+  hosts: localhost
+  connection: local
+  gather_facts: no
+
+  vars:
+    region: "ap-south-1"
+    instance_type: "t3.micro"
+    ami_id: "ami-02b8269d5e85954ef"   # Ubuntu 22.04 (Mumbai)
+    sg_name: "deepak-sg"
+    key_name: "aws-project"                # Replace with your key
+
+  tasks:
+
+    - name: Create Security Group
+    - amazon.aws.ec2_security_group:
+        name: "{{ sg_name }}"
+        description: "Security group created via Ansible"
+        region: "{{ region }}"
+        rules:
+          - proto: tcp
+            from_port: 22
+            to_port: 22
+            cidr_ip: 0.0.0.0/0
+      register: sg_out
+
+    - name: Launch EC2 Instance
+      amazon.aws.ec2_instance:
+        name: "ansible-ec2"
+        key_name: "{{ key_name }}"
+        instance_type: "{{ instance_type }}"
+        image_id: "{{ ami_id }}"
+        region: "{{ region }}"
+        security_group: "{{ sg_out.group_id }}"
+        wait: yes
+      register: ec2_out
+
+
